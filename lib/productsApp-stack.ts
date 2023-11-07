@@ -64,6 +64,6 @@ export class ProductsAppStack extends cdk.Stack {
       }
     });
 
-  this.productsDdb.grantWriteData(this.productsFecthHandler)
+  this.productsDdb.grantWriteData(this.productsAdminHandler)
   }
 }
