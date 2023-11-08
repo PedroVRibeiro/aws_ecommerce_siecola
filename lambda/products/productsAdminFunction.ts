@@ -18,7 +18,7 @@ export async function handler(event: APIGatewayProxyEvent, context: Context): Pr
           message: "POST - /products - OK"
         })
     }
-  } else if (event.resource === "products/{id}") {
+  } else if (event.resource === "/products/{id}") {
     const productId = event.pathParameters!.id as string
     if (method === "PUT") {
       console.log(`PUT - /products/${productId} - method received`)
