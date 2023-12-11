@@ -10,10 +10,12 @@ interface OrdersAppStackProps extends cdk.StackProps {
 }
 
 export class OrdersAppStack extends cdk.Stack {
+  readonly ordersHandler: lambdaNodeJS.NodejsFunction
+
   constructor(scope: Construct, id: string, props: OrdersAppStackProps) {
     super(scope, id, props)
 
-    const orderDdb = new dynamodb.Table(this, "OrdersDdb", {
+    const ordersDdb = new dynamodb.Table(this, "OrdersDdb", {
       tableName: "orders",
       partitionKey: {
         name: "pk",
@@ -35,5 +37,28 @@ export class OrdersAppStack extends cdk.Stack {
     //Products Layer
     const productsLayerArn = ssm.StringParameter.valueForStringParameter(this, "ProductsLayerVersionArn")
     const productsLayer = lambda.LayerVersion.fromLayerVersionArn(this, "ProductsLayerVersionArn", productsLayerArn)
+
+    this.ordersHandler = new lambdaNodeJS.NodejsFunction(this, "OrdersFunction", {
+      runtime: lambda.Runtime.NODEJS_16_X,
+        functionName: 'OrdersFunction',
+        entry: 'lambda/orders/ordersFunction.ts',
+        handler: 'handler',
+        memorySize: 128,
+        timeout: cdk.Duration.seconds(2),
+        bundling: {
+          minify: true,
+          sourceMap: false,
+        },
+        environment: {
+          PRODUCTS_DDB: props.productsDdb.tableName,
+          ORDERS_DDB: ordersDdb.tableName
+        },
+        layers: [ordersLayer ,productsLayer],
+        tracing: lambda.Tracing.ACTIVE,
+        insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
+    })
+
+    ordersDdb.grantReadWriteData(this.ordersHandler)
+    props.productsDdb.grantReadData(this.ordersHandler)
   }
 }
