@@ -7,6 +7,7 @@ import { Construct } from 'constructs';
 interface ECommerceApiStackProps extends cdk.StackProps {
   productsFetchHandler: lambdaNodeJS.NodejsFunction;
   productsAdminHandler: lambdaNodeJS.NodejsFunction;
+  ordersHandler: lambdaNodeJS.NodejsFunction;
 }
 
 export class ECommerceApiStack extends cdk.Stack {
@@ -35,6 +36,31 @@ export class ECommerceApiStack extends cdk.Stack {
     });
 
     this.createProductsService(props, api);
+    this.createOrdersService(props, api);
+  }
+
+  // utilizando parâmetros na URL; apenas UM recurso
+  private createOrdersService(
+    props: ECommerceApiStackProps,
+    api: apigateway.RestApi
+  ) {
+    const ordersIntegration = new apigateway.LambdaIntegration(
+      props.ordersHandler
+    );
+
+    // resource - /orders
+    const ordersResource = api.root.addResource('orders');
+
+    // GET /orders
+    // GET //orders?email=email@email.com.br
+    // GET /orders?email=email@email.com.br&orderId=123
+    ordersResource.addMethod('GET', ordersIntegration);
+
+    // DELETE /orders?email=email@email.com.b&orderId=123
+    ordersResource.addMethod('DELETE', ordersIntegration);
+
+    // POST /orders
+    ordersResource.addMethod('POST', ordersIntegration);
   }
 
   private createProductsService(
